@@ -162,14 +162,36 @@ body {
 }
 
 .btn-select.disabled {
-    background-color: #DC3545; /* Botão "Já Avaliado" vermelho */
+    background-color: #DC3545;
     color: #FFFFFF;
     cursor: not-allowed;
 }
 
 .btn-select.disabled:hover {
-    background-color: #DC3545; /* Mantém vermelho no hover */
+    background-color: #DC3545;
     transform: none;
+}
+
+.btn-info {
+    display: block;
+    width: 100%;
+    background-color: #FFD166;
+    color: #1E2A38;
+    padding: 0.5rem;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    text-align: center;
+    text-decoration: none;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    cursor: pointer;
+    margin-top: auto;
+}
+
+.btn-info:hover {
+    background-color: #FFC107;
+    transform: translateY(-2px);
 }
 
 .btn-submit {
@@ -197,6 +219,13 @@ body {
     color: #FFFFFF;
     cursor: not-allowed;
     transform: none;
+}
+
+.button-group {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+    margin-top: 0.5rem;
 }
 
 /* Hero Section */
@@ -856,10 +885,10 @@ body {
 }
 
 .profile-section tr.top-1 td:first-child::before {
-    content: '\f091'; /* Ícone de troféu */
+    content: '\f091';
     font-family: 'Font Awesome 6 Free';
     font-weight: 900;
-    color: #FFD700; /* Ouro */
+    color: #FFD700;
     margin-right: 0.5rem;
 }
 
@@ -867,7 +896,7 @@ body {
     content: '\f091';
     font-family: 'Font Awesome 6 Free';
     font-weight: 900;
-    color: #C0C0C0; /* Prata */
+    color: #C0C0C0;
     margin-right: 0.5rem;
 }
 
@@ -875,7 +904,7 @@ body {
     content: '\f091';
     font-family: 'Font Awesome 6 Free';
     font-weight: 900;
-    color: #CD7F32; /* Bronze */
+    color: #CD7F32;
     margin-right: 0.5rem;
 }
 
@@ -971,5 +1000,9 @@ h1 {
     }
     .ranking-filter {
         text-align: center;
+    }
+    .button-group {
+        flex-direction: column;
+        gap: 8px;
     }
 }
