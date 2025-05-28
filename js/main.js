@@ -230,14 +230,14 @@ document.addEventListener('DOMContentLoaded', () => {
             <p>${product.description}</p>
             <span class="review-count"><i class="fas fa-star"></i> ${reviewCount} Avaliação${reviewCount !== 1 ? 'ões' : ''}</span>
             <span class="read-more">Ler mais</span>
-            <button class="btn-select">Enviar Avaliação</button>
+            <button class="btn-select">Avaliar Produto</button>
           </div>
           <div class="review-form">
             <h4>Avaliar ${product.name}</h4>
             <form>
               <div class="form-group">
                 <label for="reviewText${category}_${index}">Sua Avaliação (em inglês)</label>
-                <textarea id="reviewText${category}_${index}" rows="2" placeholder="Share your feedback in English..." required></textarea>
+                <textarea id="reviewText${category}_${index}" rows="3" placeholder="Share your feedback in English..." required></textarea>
               </div>
               <div class="form-group">
                 <label>Classificação</label>
@@ -272,6 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
+    console.log("Renderização concluída.");
     checkReviewedProducts();
     attachReviewFormListeners();
   }
@@ -333,6 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
 
+        // Validação via Twinword (Commented out)
         /*
         const isValid = await validateReviewWithAI(reviewText);
         if (!isValid) {
@@ -369,7 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
         thumbs.forEach(t => t.classList.remove('selected'));
         const selectBtn = card.querySelector('.btn-select');
         selectBtn.classList.add('disabled');
-        selectBtn.textContent = '✓ Selecionado!';
+        selectBtn.textContent = '✓ Já Avaliado';
         selectBtn.removeEventListener('click', toggleReviewForm);
         card.classList.remove('review-active');
         loadProducts();
@@ -471,6 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const rankingListElement = document.getElementById('rankingList');
     const totalReviewsElement = document.getElementById('totalReviews');
     const totalTokensElement = document.getElementById('totalTokens');
+    const totalStakedTokensElement = document.getElementById('totalStakedTokens');
     const userRankingElement = document.getElementById('userRanking');
     const rankingSortElement = document.getElementById('rankingSort');
 
@@ -491,13 +494,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // Calculate community stats
     let totalReviews = 0;
     let totalTokens = 0;
+    let totalStakedTokens = 0;
     ranking.forEach(user => {
       totalReviews += user.reviews;
       totalTokens += user.totalTokens;
     });
+    Object.values(walletsData).forEach(userData => {
+      if (userData.stakes) {
+        const now = new Date();
+        userData.stakes.forEach(stake => {
+          const stakeDate = new Date(stake.date);
+          const releaseDate = new Date(stakeDate.getTime() + 90 * 24 * 60 * 60 * 1000);
+          if (now < releaseDate) {
+            totalStakedTokens += stake.amount;
+          }
+        });
+      }
+    });
 
     if (totalReviewsElement) totalReviewsElement.textContent = totalReviews;
     if (totalTokensElement) totalTokensElement.textContent = `${totalTokens.toFixed(2)} DET`;
+    if (totalStakedTokensElement) totalStakedTokensElement.textContent = `${totalStakedTokens.toFixed(2)} DET`;
 
     // Sort ranking based on filter
     const sortBy = rankingSortElement ? rankingSortElement.value : 'reviews';
@@ -555,7 +572,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const withdrawBtn = document.getElementById('withdrawTokens');
   if (withdrawBtn) {
     withdrawBtn.addEventListener('click', () => {
-      alert('Saques estarão disponíveis em breve!');
+      alert('Saques estarão disponíveis em breve! Fique ligado para atualizações.');
     });
   }
 
@@ -642,7 +659,7 @@ document.addEventListener('DOMContentLoaded', () => {
         new URL(url);
         const img = new Image();
         img.onload = () => resolve(true);
-        img.onerror = () => resolve();
+        img.onerror = () => resolve(false);
         img.src = url;
         setTimeout(() => resolve(false), 3000);
       } catch (_) {
