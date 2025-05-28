@@ -182,8 +182,10 @@ document.addEventListener('DOMContentLoaded', () => {
             <p>${product.description}</p>
             <span class="review-count"><i class="fas fa-star"></i> ${reviewCount} Avaliação${reviewCount !== 1 ? 'ões' : ''}</span>
             <span class="read-more">Ler mais</span>
-            <a href="product.html?name=${encodeURIComponent(product.name)}" class="btn btn-info">Ver Detalhes</a>
-            <button class="btn btn-select">Avaliar Selecionado</button>
+            <div class="button-group">
+              <a href="product.html?name=${encodeURIComponent(product.name)}" class="btn btn-info">Ver Detalhes</a>
+              <button class="btn btn-select">Avaliar Selecionado</button>
+            </div>
           </div>
           <div class="review-form">
             <h4>Avaliar ${product.name}</h4>
@@ -432,6 +434,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Update staked tokens
   function updateStakedTokens() {
+    const stakedTokensElement = document.getElementById('stakedTokens');
+    const stakeReleaseDateElement = document.getElementById('stakeReleaseDate');
+    const stakeRewardsElement = document.getElementById('stakeRewards');
+    if (stakedTokensElement && stakeReleaseDateElement && stakeRewardsElement) {
+      if (!walletAddress) {
+        stakedTokensElement.textContent = '0.00 DET';
+        stakeReleaseDateElement.textContent = 'N/A';
+        stakeRewardsElement.textContent = '0.00 DET';
+        return;
+      }
+
+      const userData = getUserData(walletAddress);
+      const now = new Date();
+      let totalStaked = 0;
+      let latestReleaseDate = null;
+      let totalRewards = 0;
+
+      const updatedStakes = [];
+      userData.stakes.forEach(stake => {
+        const stakeDate = new Date(stake.date);
+        const releaseDate = new Date(stakeDate.getTime() + 90 * 24 * 60 * 60 * 1000);
+        if (isNaN(releaseDate.getTime())) {
+          console.error('Data de stake inválida:', stake.date);
+          return;
+        }
+        if (now >= releaseDate) {
+          userData.balance += stake.amount + (stake.amount * 0.5);
+          console.log(`Stake liberado: ${stake.amount.toFixed(2)} DET + ${(stake.amount * 0.5).toFixed(2)} DET`);
+        } else {
+          updatedStakes.push(stake);
+          totalStaked += stake.amount;
+          totalRewards += stake.amount * 0.5;
+          if (!latestReleaseDate || releaseDate > latestReleaseDate) {
+            latestReleaseDate = releaseDate;
+          }
+        }
+      });
+
+      userData.stakes = updatedStakes;
+      saveUserData(walletAddress, userData);
+
+      stakedTokensElement.textContent = `${totalStaked.toFixed(2)} DET`;
+      stakeReleaseDateElement.textContent = latestReleaseDate ? latestReleaseDate.toLocaleDateString('pt-BR') : 'N/A';
+      stakeRewardsElement.textContent = `${totalRewards.toFixed(2)} DET`;
+    }
+
+    // Update total staked tokens for rewards.html
     const totalStakedTokensElement = document.getElementById('totalStakedTokens');
     if (totalStakedTokensElement) {
       const walletsData = JSON.parse(localStorage.getItem('walletsData') || '{}');
@@ -502,12 +551,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!rankingListElement) return;
 
     const walletsData = JSON.parse(localStorage.getItem('walletsData') || '{}');
-    let ranking = Object.keys(walletsData)
-      .map(wallet => {
-        const userData = walletsData[wallet];
-        const totalTokens = userData.reviews.reduce((sum, review) => sum + (review.tokens || 0), 0);
-        return { wallet, reviews: userData.reviews.length, totalTokens };
-      });
+    let ranking = Object.keys(walletsData).map(wallet => {
+      const userData = walletsData[wallet];
+      const totalTokens = userData.reviews.reduce((sum, review) => sum + (review.tokens || 0), 0);
+      return { wallet, reviews: userData.reviews.length, totalTokens };
+    });
 
     let totalReviews = 0;
     let totalTokens = 0;
@@ -678,6 +726,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (submitProductForm) {
     submitProductForm.addEventListener('submit', async e => {
       e.preventDefault();
+      console.log("Enviando produto do formulário...");
       if (!walletAddress) {
         showMessage('Conecte sua carteira primeiro!', 'error');
         return;
@@ -728,6 +777,7 @@ document.addEventListener('DOMContentLoaded', () => {
       products.push(productData);
       localStorage.setItem('products', JSON.stringify(products));
 
+      console.log("Produto salvo:", productData);
       showMessage('Produto enviado com sucesso!', 'success');
       submitProductForm.reset();
       loadProducts();
