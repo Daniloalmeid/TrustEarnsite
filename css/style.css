@@ -144,16 +144,16 @@ body {
     width: 100%;
     background-color: #3A86FF;
     color: #FFFFFF;
-    padding: 0.5rem;
+    padding: 0.75rem;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     font-weight: 500;
-    font-size: 0.9rem;
+    font-size: 1rem;
     text-align: center;
     text-decoration: none;
     transition: background-color 0.3s ease, transform 0.2s ease;
     cursor: pointer;
-    margin-top: auto;
+    margin-top: 1rem;
 }
 
 .btn-select:hover {
@@ -177,16 +177,16 @@ body {
     width: 100%;
     background-color: #FFD166;
     color: #1E2A38;
-    padding: 0.5rem;
+    padding: 0.75rem;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     font-weight: 500;
-    font-size: 0.9rem;
+    font-size: 1rem;
     text-align: center;
     text-decoration: none;
     transition: background-color 0.3s ease, transform 0.2s ease;
     cursor: pointer;
-    margin-top: auto;
+    margin-top: 1rem;
 }
 
 .btn-info:hover {
@@ -199,11 +199,11 @@ body {
     width: 100%;
     background-color: #3A86FF;
     color: #FFFFFF;
-    padding: 0.5rem;
+    padding: 0.75rem;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     font-weight: 500;
-    font-size: 0.9rem;
+    font-size: 1rem;
     text-transform: uppercase;
     cursor: pointer;
     transition: background-color 0.3s ease, transform 0.2s ease;
@@ -231,27 +231,28 @@ body {
 /* Hero Section */
 .hero {
     text-align: center;
-    padding: 4rem 2rem;
-    background: linear-gradient(135deg, #F7F9FC 0%, #E6E9F0 100%);
+    padding: 2rem 1.5rem;
+    background: linear-gradient(135deg, #4A90E2 0%, #7B9EF2 100%);
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    color: #FFFFFF;
 }
 
-.hero h1 {
-    color: #1E2A38;
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
+.hero h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
 }
 
-.hero p {
+.hero .product-description {
+    font-size: 0.95rem;
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #F7F9FC;
     color: #333333;
-    font-size: 1.2rem;
-    margin-bottom: 2rem;
-}
-
-.hero .btn-container {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #E6E9F0;
 }
 
 /* Product Cards */
@@ -380,20 +381,21 @@ body {
 
 .review-form h4 {
     color: #1E2A38;
-    font-size: 0.9rem;
-    margin-bottom: 0.5rem;
+    font-size: 1rem;
+    margin-bottom: 1rem;
     text-align: center;
+    font-weight: 600;
 }
 
 .review-form .form-group {
-    margin-bottom: 0.5rem;
+    margin-bottom: 1rem;
 }
 
 .review-form label {
     color: #333333;
     font-weight: 500;
-    font-size: 0.8rem;
-    margin-bottom: 0.2rem;
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
     display: block;
 }
 
@@ -402,11 +404,11 @@ body {
 .review-form textarea,
 .review-form select {
     width: 100%;
-    padding: 0.4rem;
+    padding: 0.75rem;
     border: 1px solid #E6E9F0;
-    border-radius: 5px;
-    font-size: 0.8rem;
-    transition: border-color 0.3s ease;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .review-form input[type="text"]:focus,
@@ -414,23 +416,24 @@ body {
 .review-form textarea:focus,
 .review-form select:focus {
     border-color: #3A86FF;
+    box-shadow: 0 0 0 3px rgba(58, 134, 255, 0.1);
     outline: none;
 }
 
 .review-form textarea {
     resize: vertical;
-    height: 60px;
+    min-height: 100px;
 }
 
 .review-form .star-rating {
     display: flex;
     justify-content: center;
-    gap: 0.3rem;
-    margin-bottom: 0.5rem;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
 }
 
 .review-form .star {
-    font-size: 1.2rem;
+    font-size: 1.5rem;
     color: #E6E9F0;
     cursor: pointer;
     transition: color 0.3s ease;
@@ -444,12 +447,12 @@ body {
 .review-form .thumb-rating {
     display: flex;
     justify-content: center;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
+    gap: 1rem;
+    margin-bottom: 1rem;
 }
 
 .review-form .thumb {
-    font-size: 1rem;
+    font-size: 1.5rem;
     cursor: pointer;
     transition: color 0.3s ease;
 }
@@ -475,12 +478,11 @@ body {
 /* Profile Section */
 .profile-section {
     background-color: #FFFFFF;
-    padding: 3rem;
-    border-radius: 20px;
+    padding: 2rem;
+    border-radius: 16px;
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-    max-width: 1000px;
-    margin: 2.5rem auto;
-    text-align: center;
+    max-width: 1200px;
+    margin: 2rem auto;
     border: 1px solid #E6E9F0;
     animation: fadeIn 0.6s ease-out;
 }
@@ -490,125 +492,43 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-.profile-section .hero {
-    background: linear-gradient(135deg, #3A86FF 0%, #B388EB 100%);
-    padding: 3rem;
-    border-radius: 16px;
-    margin-bottom: 2.5rem;
-    position: relative;
-    overflow: hidden;
-    transition: background 0.5s ease;
+/* Product Details */
+.product-details {
+    margin-bottom: 1.5rem;
+    align-items: center;
 }
 
-.profile-section .hero:hover {
-    background: linear-gradient(135deg, #B388EB 0%, #3A86FF 100%);
-}
-
-.profile-section .hero::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
+.product-image {
     width: 100%;
-    height: 100%;
-    background: radial-gradient(circle, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 70%);
-    opacity: 0.6;
-}
-
-.profile-section .hero h2 {
-    color: #FFFFFF;
-    font-size: 2.4rem;
-    font-weight: 700;
+    max-width: 400px;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    object-fit: cover;
     margin-bottom: 1rem;
-    position: relative;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.profile-section .hero .wallet-address {
-    color: #FFFFFF;
+.product-info {
+    padding: 1.5rem;
+}
+
+.product-info p {
     font-size: 1.1rem;
-    font-weight: 500;
-    opacity: 0.85;
-    margin-bottom: 1.2rem;
-    word-break: break-all;
-    position: relative;
-}
-
-.profile-section .token-balance {
-    font-size: 3.5rem;
-    color: #FFFFFF;
-    font-weight: 800;
-    position: relative;
-    text-shadow: 0 0 8px rgba(255, 209, 102, 0.5);
-}
-
-.profile-section .token-balance span {
-    color: #FFD166;
-}
-
-.profile-section .btn-container {
-    margin-top: 2rem;
-    display: flex;
-    justify-content: center;
-    gap: 1.5rem;
-}
-
-.profile-section .stake-info {
-    background-color: #FFFFFF;
-    padding: 2rem;
-    border-radius: 16px;
-    margin-bottom: 2.5rem;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.profile-section .stake-info:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
-}
-
-.profile-section .stake-info h3 {
-    color: #1E2A38;
-    font-size: 1.8rem;
-    font-weight: 600;
-    margin-bottom: 1.2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.profile-section .stake-info .icon {
-    color: #3A86FF;
-    margin-right: 0.6rem;
-    font-size: 1.4rem;
-}
-
-.profile-section .stake-info p {
     color: #333333;
-    font-size: 1.1rem;
-    font-weight: 500;
-    margin-bottom: 0.8rem;
-    display: flex;
-    align-items: center;
+    margin-bottom: 1rem;
 }
 
-.profile-section .stake-info p strong {
+.product-info p strong {
     color: #1E2A38;
-    margin-right: 0.5rem;
-}
-
-.profile-section .stake-info p span {
-    color: #3A86FF;
-}
-
-.profile-section h3 {
-    color: #1E2A38;
-    font-size: 2rem;
     font-weight: 600;
-    margin-bottom: 1.8rem;
 }
 
-.profile-section table {
+/* Review Table */
+.review-table {
+    margin-top: 1rem;
+}
+
+.review-table table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
@@ -618,43 +538,45 @@ body {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
-.profile-section tr {
-    transition: background-color 0.3s ease;
-}
-
-.profile-section tr:hover {
-    background-color: #E6E9F0;
-}
-
-.profile-section th, .profile-section td {
-    padding: 1.2rem;
+.review-table th, .review-table td {
+    padding: 1rem;
     text-align: left;
     border-bottom: 1px solid #E6E9F0;
 }
 
-.profile-section th {
+.review-table th {
     color: #1E2A38;
     font-weight: 700;
     background-color: #E6E9F0;
-    font-size: 1rem;
-}
-
-.profile-section td {
-    color: #333333;
     font-size: 0.95rem;
 }
 
-.profile-section .stars {
+.review-table td {
+    color: #333333;
+    font-size: 0.9rem;
+}
+
+.review-table tr:nth-child(even) {
+    background-color: #F0F2F5;
+}
+
+.review-table tr:hover {
+    background-color: #E6E9F0;
+}
+
+.review-table .stars {
     color: #FFD166;
     font-size: 1.1rem;
 }
 
-.profile-section .thumb-up {
+.review-table .thumb-up {
     color: #28A745;
+    font-size: 1.2rem;
 }
 
-.profile-section .thumb-down {
+.review-table .thumb-down {
     color: #DC3545;
+    font-size: 1.2rem;
 }
 
 /* Submit Product Section */
@@ -753,6 +675,17 @@ body {
 .submit-product-section .message.error {
     background-color: #DC3545;
     color: #FFFFFF;
+}
+
+/* No Products Message */
+.no-products {
+    text-align: center;
+    font-size: 1.2rem;
+    color: #1E2A38;
+    padding: 2rem;
+    background-color: #FFFFFF;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* How It Works - Steps and Benefits */
@@ -915,17 +848,46 @@ body {
 
 h1 {
     color: #1E2A38;
-    font-size: 2rem;
+    font-size: 1.8rem;
     font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+h3 {
+    color: #1E2A38;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
 }
 
 /* Responsive Adjustments */
 @media (max-width: 768px) {
-    .hero h1 {
-        font-size: 2rem;
+    .hero {
+        padding: 1.5rem 1rem;
     }
-    .hero p {
-        font-size: 1rem;
+    .hero h2 {
+        font-size: 1.4rem;
+    }
+    .hero .product-description {
+        font-size: 0.9rem;
+        padding: 0.5rem 0.75rem;
+    }
+    .product-details {
+        flex-direction: column;
+    }
+    .product-image {
+        max-width: 100%;
+        margin: 0 auto 1rem;
+    }
+    .product-info {
+        padding: 1rem 0;
+    }
+    .review-form h4 {
+        font-size: 0.9rem;
+    }
+    .review-table th, .review-table td {
+        padding: 0.75rem;
+        font-size: 0.85rem;
     }
     .btn-container {
         flex-direction: column;
@@ -955,32 +917,9 @@ h1 {
     .review-form {
         padding: 0.5rem;
     }
-    .review-form h4 {
-        font-size: 0.8rem;
-    }
     .profile-section {
-        padding: 2rem;
-        margin: 1.5rem auto;
-    }
-    .profile-section .hero {
-        padding: 2rem;
-    }
-    .profile-section .hero h2 {
-        font-size: 2rem;
-    }
-    .profile-section .token-balance {
-        font-size: 2.8rem;
-    }
-    .profile-section .stake-info {
         padding: 1.5rem;
-    }
-    .profile-section .stake-info h3 {
-        font-size: 1.6rem;
-    }
-    .profile-section table th,
-    .profile-section table td {
-        padding: 0.8rem;
-        font-size: 0.9rem;
+        margin: 1.5rem auto;
     }
     .submit-product-section {
         padding: 2rem;

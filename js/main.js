@@ -1,22 +1,35 @@
-// js/main.js
 document.addEventListener('DOMContentLoaded', () => {
-  console.log("=== main.js Loaded ===");
-  let walletAddress = localStorage.getItem('walletAddress') || null;
+  console.log("=== main.js Carregado ===");
+  let walletAddress = null;
+  try {
+    walletAddress = localStorage.getItem('walletAddress') || null;
+  } catch (error) {
+    console.error('Erro ao acessar walletAddress no localStorage:', error);
+  }
 
-  // Initialize functions
+  // Inicializar funções
   updateWalletUI();
+  if (window.location.pathname.includes('evaluate.html')) {
+    loadProducts();
+    checkReviewedProducts();
+    attachReviewFormListeners();
+  }
+  if (window.location.pathname.includes('product.html')) {
+    loadProductDetails();
+    checkReviewedProducts();
+    attachReviewFormListeners();
+  }
+  if (window.location.pathname.includes('profile.html')) updateProfilePage();
+  if (window.location.pathname.includes('rewards.html')) updateRankingList();
   updateStakedTokens();
-  updateProfilePage();
-  loadProducts();
-  updateRankingList();
-  loadProductDetails();
+  setupSubmitProductForm();
 
-  // Update wallet UI
+  // Atualizar UI da carteira
   function updateWalletUI() {
-    console.log("Updating wallet UI...");
+    console.log("Atualizando UI da carteira...");
     const walletBtn = document.getElementById('connectWallet');
     if (walletBtn) {
-      walletBtn.textContent = walletAddress ? 'Disconnect' : 'Connect Wallet';
+      walletBtn.textContent = walletAddress ? 'Desconectar' : 'Conectar Carteira';
       walletBtn.classList.toggle('connected', !!walletAddress);
       walletBtn.classList.toggle('btn-secondary', !!walletAddress);
       walletBtn.classList.toggle('btn-primary', !walletAddress);
@@ -24,27 +37,46 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Get user data
+  // Obter dados do usuário
   function getUserData(walletAddress) {
-    const walletsData = JSON.parse(localStorage.getItem('walletsData') || '{}');
+    let walletsData = {};
+    try {
+      walletsData = JSON.parse(localStorage.getItem('walletsData') || '{}');
+    } catch (error) {
+      console.error('Erro ao acessar walletsData no localStorage:', error);
+    }
     return walletsData[walletAddress] || { balance: 0, reviews: [], stakes: [] };
   }
 
-  // Save user data
+  // Salvar dados do usuário
   function saveUserData(walletAddress, data) {
-    const walletsData = JSON.parse(localStorage.getItem('walletsData') || '{}');
-    walletsData[walletAddress] = data;
-    localStorage.setItem('walletsData', JSON.stringify(walletsData));
+    let walletsData = {};
+    try {
+      walletsData = JSON.parse(localStorage.getItem('walletsData') || '{}');
+      walletsData[walletAddress] = data;
+      localStorage.setItem('walletsData', JSON.stringify(walletsData));
+    } catch (error) {
+      console.error('Erro ao salvar walletsData no localStorage:', error);
+    }
   }
 
-  // Clear wallet address
+  // Limpar endereço da carteira
   function clearWalletAddress() {
-    localStorage.removeItem('walletAddress');
+    try {
+      localStorage.removeItem('walletAddress');
+    } catch (error) {
+      console.error('Erro ao remover walletAddress do localStorage:', error);
+    }
   }
 
-  // Count reviews for a product
+  // Contar avaliações de um produto
   function countProductReviews(productName) {
-    const walletsData = JSON.parse(localStorage.getItem('walletsData') || '{}');
+    let walletsData = {};
+    try {
+      walletsData = JSON.parse(localStorage.getItem('walletsData') || '{}');
+    } catch (error) {
+      console.error('Erro ao acessar walletsData no localStorage:', error);
+    }
     let count = 0;
     Object.values(walletsData).forEach(userData => {
       if (userData.reviews) {
@@ -54,35 +86,41 @@ document.addEventListener('DOMContentLoaded', () => {
     return count;
   }
 
-  // Wallet connection/disconnection
+  // Conexão/desconexão da carteira
   const connectWalletBtn = document.getElementById('connectWallet');
   if (connectWalletBtn) {
-    connectWalletBtn.addEventListener('click', () => {
+    connectWalletBtn.addEventListener('click', async () => {
+      console.log("Botão de conexão clicado...");
       if (walletAddress) {
         walletAddress = null;
         clearWalletAddress();
-        alert('Wallet disconnected!');
+        alert('Carteira desconectada!');
       } else {
         if (typeof window.solana !== 'undefined' && window.solana.isPhantom) {
-          window.solana.connect()
-            .then(resp => {
-              walletAddress = resp.publicKey.toString();
+          try {
+            const resp = await window.solana.connect();
+            walletAddress = resp.publicKey.toString();
+            try {
               localStorage.setItem('walletAddress', walletAddress);
-              const userData = getUserData(walletAddress);
-              if (!userData.balance && !userData.reviews && !userData.stakes) {
-                userData.balance = 0;
-                userData.reviews = [];
-                userData.stakes = [];
-                saveUserData(walletAddress, userData);
-              }
-              alert(`Connected to Phantom Wallet: ${walletAddress}`);
-            })
-            .catch(err => {
-              console.error('Connection error:', err);
-              alert('Failed to connect to Phantom Wallet: ' + err.message);
-            });
+            } catch (error) {
+              console.error('Erro ao salvar walletAddress no localStorage:', error);
+              alert('Erro ao salvar endereço da carteira.');
+              return;
+            }
+            const userData = getUserData(walletAddress);
+            if (!userData.balance && !userData.reviews && !userData.stakes) {
+              userData.balance = 0;
+              userData.reviews = [];
+              userData.stakes = [];
+              saveUserData(walletAddress, userData);
+            }
+            alert(`Conectado à Phantom Wallet: ${walletAddress}`);
+          } catch (error) {
+            console.error('Erro ao conectar Phantom Wallet:', error);
+            alert('Erro ao conectar à Phantom Wallet: ' + error.message);
+          }
         } else {
-          alert('Please install Phantom Wallet!');
+          alert('Por favor, instale a Phantom Wallet!');
           window.open('https://phantom.app/', '_blank');
         }
       }
@@ -94,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Check reviewed products
+  // Verificar produtos avaliados
   function checkReviewedProducts() {
     if (!walletAddress) return;
     const userData = getUserData(walletAddress);
@@ -105,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (productName && selectBtn) {
         const hasReviewed = userData.reviews.some(review => review.product === productName);
         selectBtn.classList.toggle('disabled', hasReviewed);
-        selectBtn.textContent = hasReviewed ? '✓ Already Reviewed' : 'Review Selected';
+        selectBtn.textContent = hasReviewed ? '✓ Já Avaliado' : 'Avaliar Selecionado';
         if (!hasReviewed && !selectBtn.dataset.listener) {
           selectBtn.addEventListener('click', toggleReviewForm);
           selectBtn.dataset.listener = 'true';
@@ -118,42 +156,97 @@ document.addEventListener('DOMContentLoaded', () => {
     if (reviewButton && productName) {
       const hasReviewed = userData.reviews.some(review => review.product === productName);
       reviewButton.classList.toggle('disabled', hasReviewed);
-      reviewButton.textContent = hasReviewed ? '✓ Already Reviewed' : 'Review Product';
+      reviewButton.textContent = hasReviewed ? '✓ Já Avaliado' : 'Avaliar Produto';
     }
   }
 
-  // Toggle review form
+  // Alternar formulário de avaliação
   function toggleReviewForm(e) {
     e.preventDefault();
-    console.log("Toggling review form...");
+    console.log("Alternando formulário de avaliação...");
     const card = e.target.closest('.product-card');
     const selectBtn = card.querySelector('.btn-select');
     if (card && selectBtn) {
       card.classList.toggle('review-active');
-      selectBtn.textContent = card.classList.contains('review-active') ? 'Back' : 'Review Selected';
+      selectBtn.textContent = card.classList.contains('review-active') ? 'Voltar' : 'Avaliar Selecionado';
     }
   }
 
-  // Load products
+  // Carregar produtos
   function loadProducts() {
-    console.log("=== Loading Products ===");
+    console.log("=== Carregando Produtos ===");
     const productList = document.querySelector('.product-list');
-    if (!productList) return;
+    if (!productList) {
+      console.error("Elemento .product-list não encontrado no DOM.");
+      return;
+    }
 
     productList.innerHTML = '';
-    let userProducts = JSON.parse(localStorage.getItem('products') || '[]');
+    let userProducts = [];
+    try {
+      const storedProducts = localStorage.getItem('products');
+      userProducts = storedProducts ? JSON.parse(storedProducts) : [];
+      console.log("Produtos carregados do localStorage:", userProducts.length);
+    } catch (error) {
+      console.error('Erro ao acessar ou parsear products no localStorage:', error);
+    }
 
-    // Add test product if none exist
+    if (!Array.isArray(userProducts) || userProducts.length === 0) {
+      console.warn("Nenhum produto encontrado. Inicializando com produtos de teste.");
+      userProducts = [
+        {
+          name: "Smartphone X",
+          description: "Um smartphone moderno com câmera de 48MP.",
+          image: "https://via.placeholder.com/300",
+          category: "Eletrônicos",
+          wallet: "test-wallet",
+          timestamp: new Date().toLocaleString('pt-BR')
+        },
+        {
+          name: "Tênis de Corrida",
+          description: "Tênis leve e confortável para corridas diárias.",
+          image: "https://via.placeholder.com/300",
+          category: "Esportes",
+          wallet: "test-wallet",
+          timestamp: new Date().toLocaleString('pt-BR')
+        },
+        {
+          name: "Livro: Aventuras Cósmicas",
+          description: "Uma ficção científica envolvente sobre exploração espacial.",
+          image: "https://via.placeholder.com/300",
+          category: "Livros",
+          wallet: "test-wallet",
+          timestamp: new Date().toLocaleString('pt-BR')
+        },
+        {
+          name: "Kit de Jardinagem",
+          description: "Ferramentas essenciais para cuidar do seu jardim.",
+          image: "https://via.placeholder.com/300",
+          category: "Jardinagem",
+          wallet: "test-wallet",
+          timestamp: new Date().toLocaleString('pt-BR')
+        },
+        {
+          name: "Boneco de Ação",
+          description: "Boneco articulado inspirado em super-heróis.",
+          image: "https://via.placeholder.com/300",
+          category: "Brinquedos",
+          wallet: "test-wallet",
+          timestamp: new Date().toLocaleString('pt-BR')
+        }
+      ];
+      try {
+        localStorage.setItem('products', JSON.stringify(userProducts));
+        console.log("Produtos de teste salvos no localStorage:", userProducts);
+      } catch (error) {
+        console.error('Erro ao salvar produtos de teste no localStorage:', error);
+      }
+    }
+
     if (userProducts.length === 0) {
-      userProducts = [{
-        name: "Smartphone X",
-        description: "A modern smartphone with a 48MP camera.",
-        image: "https://via.placeholder.com/300",
-        category: "Electronics",
-        wallet: "test-wallet",
-        timestamp: new Date().toLocaleString('pt-BR')
-      }];
-      localStorage.setItem('products', JSON.stringify(userProducts));
+      console.warn("Ainda sem produtos após inicialização.");
+      productList.innerHTML = '<p class="no-products">Nenhum produto disponível no momento.</p>';
+      return;
     }
 
     const categories = {};
@@ -180,22 +273,22 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="content">
             <h3>${product.name}</h3>
             <p>${product.description}</p>
-            <span class="review-count"><i class="fas fa-star"></i> ${reviewCount} Review${reviewCount !== 1 ? 's' : ''}</span>
-            <span class="read-more">Read more</span>
+            <span class="review-count"><i class="fas fa-star"></i> ${reviewCount} Avaliação${reviewCount !== 1 ? 'es' : ''}</span>
+            <span class="read-more">Ler mais</span>
             <div class="button-group">
-              <a href="product.html?name=${encodeURIComponent(product.name)}" class="btn btn-info">View Details</a>
-              <button class="btn btn-select">Review Selected</button>
+              <a href="product.html?name=${encodeURIComponent(product.name)}" class="btn btn-info">Ver Detalhes</a>
+              <button class="btn btn-select">Avaliar Selecionado</button>
             </div>
           </div>
           <div class="review-form">
-            <h4>Review ${product.name}</h4>
+            <h4>Avaliar ${product.name}</h4>
             <form>
               <div class="form-group">
-                <label for="reviewText${category}_${index}">Your Review (in English)</label>
+                <label for="reviewText${category}_${index}">Sua Avaliação (em inglês)</label>
                 <textarea id="reviewText${category}_${index}" rows="3" placeholder="Share your feedback in English..." required></textarea>
               </div>
               <div class="form-group">
-                <label>Rating</label>
+                <label>Classificação</label>
                 <div class="star-rating">
                   <span class="star" data-value="1">★</span>
                   <span class="star" data-value="2">★</span>
@@ -205,13 +298,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
               </div>
               <div class="form-group">
-                <label>Sentiment</label>
+                <label>Sentimento</label>
                 <div class="thumb-rating">
                   <i class="fas fa-thumbs-up thumb up"></i>
                   <i class="fas fa-thumbs-down thumb down"></i>
                 </div>
               </div>
-              <button type="submit" class="btn-submit">Submit Review</button>
+              <button type="submit" class="btn-submit">Enviar Avaliação</button>
             </form>
           </div>
         `;
@@ -221,18 +314,19 @@ document.addEventListener('DOMContentLoaded', () => {
         readMore.addEventListener('click', () => {
           const description = card.querySelector('p');
           const isExpanded = description.classList.toggle('expanded');
-          readMore.textContent = isExpanded ? 'Read less' : 'Read more';
+          readMore.textContent = isExpanded ? 'Ler menos' : 'Ler mais';
         });
       });
     });
 
+    console.log("Produtos renderizados:", Object.keys(categories).length, "categorias com", userProducts.length, "produtos no total.");
     checkReviewedProducts();
     attachReviewFormListeners();
   }
 
-  // Attach review form listeners
+  // Anexar ouvintes ao formulário de avaliação
   function attachReviewFormListeners() {
-    console.log("Attaching review form listeners...");
+    console.log("Anexando ouvintes ao formulário de avaliação...");
     const productCards = document.querySelectorAll('.product-card');
     productCards.forEach(card => {
       const reviewForm = card.querySelector('.review-form form');
@@ -256,9 +350,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       reviewForm.addEventListener('submit', e => {
         e.preventDefault();
-        console.log("Review form submitted (evaluate.html)");
+        console.log("Formulário de avaliação enviado (evaluate.html)");
         if (!walletAddress) {
-          alert('Please connect your wallet first!');
+          alert('Por favor, conecte sua carteira primeiro!');
           return;
         }
 
@@ -269,21 +363,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const thumbType = selectedThumb ? (selectedThumb.classList.contains('up') ? 'Positive' : 'Negative') : null;
 
         if (!reviewText || reviewText.length < 10) {
-          alert('The review must be at least 10 characters long.');
+          alert('A avaliação deve ter pelo menos 10 caracteres.');
           return;
         }
         if (selectedStars === 0) {
-          alert('Please select a star rating.');
+          alert('Por favor, selecione uma classificação por estrelas.');
           return;
         }
         if (!thumbType) {
-          alert('Please select a sentiment (thumbs up or down).');
+          alert('Por favor, selecione um sentimento (polegar para cima ou para baixo).');
           return;
         }
 
         const userData = getUserData(walletAddress);
         if (userData.reviews.some(review => review.product === productName)) {
-          alert('You have already reviewed this product!');
+          alert('Você já avaliou este produto!');
           return;
         }
 
@@ -308,14 +402,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         saveUserData(walletAddress, userData);
 
-        alert(`Review submitted for ${productName}!\nRating: ${selectedStars} stars\nSentiment: ${thumbType}\nTokens Earned: ${tokensEarned.toFixed(2)} DET`);
+        alert(`Avaliação enviada para ${productName}!\nClassificação: ${selectedStars} estrelas\nSentimento: ${thumbType}\nTokens Ganhos: ${tokensEarned.toFixed(2)} DET`);
 
         reviewForm.reset();
         stars.forEach(s => s.classList.remove('selected'));
         thumbs.forEach(t => t.classList.remove('selected'));
         const selectBtn = card.querySelector('.btn-select');
         selectBtn.classList.add('disabled');
-        selectBtn.textContent = '✓ Already Reviewed';
+        selectBtn.textContent = '✓ Já Avaliado';
         selectBtn.removeEventListener('click', toggleReviewForm);
         card.classList.remove('review-active');
         loadProducts();
@@ -326,10 +420,10 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // Product review form (product.html)
+    // Formulário de avaliação do produto (product.html)
     const productReviewForm = document.getElementById('productReviewForm');
     if (productReviewForm) {
-      console.log("Setting up review form in product.html");
+      console.log("Configurando formulário de avaliação em product.html");
       const stars = productReviewForm.querySelectorAll('.star');
       stars.forEach(star => {
         star.addEventListener('click', () => {
@@ -348,9 +442,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       productReviewForm.addEventListener('submit', e => {
         e.preventDefault();
-        console.log("Review form submitted (product.html)");
+        console.log("Formulário de avaliação enviado (product.html)");
         if (!walletAddress) {
-          alert('Please connect your wallet first!');
+          alert('Por favor, conecte sua carteira primeiro!');
           return;
         }
 
@@ -361,25 +455,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const thumbType = selectedThumb ? (selectedThumb.classList.contains('up') ? 'Positive' : 'Negative') : null;
 
         if (!productName) {
-          alert('Error: Product name not found.');
+          alert('Erro: Nome do produto não encontrado.');
           return;
         }
         if (!reviewText || reviewText.length < 10) {
-          alert('The review must be at least 10 characters long.');
+          alert('A avaliação deve ter pelo menos 10 caracteres.');
           return;
         }
         if (selectedStars === 0) {
-          alert('Please select a star rating.');
+          alert('Por favor, selecione uma classificação por estrelas.');
           return;
         }
         if (!thumbType) {
-          alert('Please select a sentiment (thumbs up or down).');
+          alert('Por favor, selecione um sentimento (polegar para cima ou para baixo).');
           return;
         }
 
         const userData = getUserData(walletAddress);
         if (userData.reviews.some(review => review.product === productName)) {
-          alert('You have already reviewed this product!');
+          alert('Você já avaliou este produto!');
           return;
         }
 
@@ -404,14 +498,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         saveUserData(walletAddress, userData);
 
-        alert(`Review submitted for ${productName}!\nRating: ${selectedStars} stars\nSentiment: ${thumbType}\nTokens Earned: ${tokensEarned.toFixed(2)} DET`);
+        alert(`Avaliação enviada para ${productName}!\nClassificação: ${selectedStars} estrelas\nSentimento: ${thumbType}\nTokens Ganhos: ${tokensEarned.toFixed(2)} DET`);
 
         productReviewForm.reset();
         stars.forEach(s => s.classList.remove('selected'));
         thumbs.forEach(t => t.classList.remove('selected'));
         const reviewButton = document.getElementById('reviewButton');
         reviewButton.classList.add('disabled');
-        reviewButton.textContent = '✓ Already Reviewed';
+        reviewButton.textContent = '✓ Já Avaliado';
         document.getElementById('reviewForm').style.display = 'none';
         loadProductDetails();
         updateStakedTokens();
@@ -420,11 +514,11 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Review button toggle
+    // Botão de avaliação
     const reviewButton = document.getElementById('reviewButton');
     if (reviewButton) {
       reviewButton.addEventListener('click', () => {
-        console.log("Review Product button clicked");
+        console.log("Botão Avaliar Produto clicado");
         if (reviewButton.classList.contains('disabled')) return;
         const reviewForm = document.getElementById('reviewForm');
         reviewForm.style.display = reviewForm.style.display === 'none' ? 'block' : 'none';
@@ -432,7 +526,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Update staked tokens
+  // Atualizar tokens em stake
   function updateStakedTokens() {
     const stakedTokensElement = document.getElementById('stakedTokens');
     const stakeReleaseDateElement = document.getElementById('stakeReleaseDate');
@@ -456,12 +550,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const stakeDate = new Date(stake.date);
         const releaseDate = new Date(stakeDate.getTime() + 90 * 24 * 60 * 60 * 1000);
         if (isNaN(releaseDate.getTime())) {
-          console.error('Invalid stake date:', stake.date);
+          console.error('Data de stake inválida:', stake.date);
           return;
         }
         if (now >= releaseDate) {
           userData.balance += stake.amount + (stake.amount * 0.5);
-          console.log(`Stake released: ${stake.amount.toFixed(2)} DET + ${(stake.amount * 0.5).toFixed(2)} DET`);
+          console.log(`Stake liberado: ${stake.amount.toFixed(2)} DET + ${(stake.amount * 0.5).toFixed(2)} DET`);
         } else {
           updatedStakes.push(stake);
           totalStaked += stake.amount;
@@ -480,10 +574,15 @@ document.addEventListener('DOMContentLoaded', () => {
       stakeRewardsElement.textContent = `${totalRewards.toFixed(2)} DET`;
     }
 
-    // Update total staked tokens for rewards.html
+    // Atualizar tokens totais em stake para rewards.html
     const totalStakedTokensElement = document.getElementById('totalStakedTokens');
     if (totalStakedTokensElement) {
-      const walletsData = JSON.parse(localStorage.getItem('walletsData') || '{}');
+      let walletsData = {};
+      try {
+        walletsData = JSON.parse(localStorage.getItem('walletsData') || '{}');
+      } catch (error) {
+        console.error('Erro ao acessar walletsData no localStorage:', error);
+      }
       let totalStakedTokens = 0;
       const now = new Date();
       Object.values(walletsData).forEach(userData => {
@@ -501,16 +600,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Update profile page
+  // Atualizar página de perfil
   function updateProfilePage() {
     const tokenBalanceElement = document.getElementById('tokenBalance');
     const reviewHistoryElement = document.getElementById('reviewHistory');
     const walletAddressElement = document.getElementById('walletAddress');
     if (tokenBalanceElement && reviewHistoryElement && walletAddressElement) {
-      walletAddressElement.textContent = walletAddress || 'Not connected';
+      walletAddressElement.textContent = walletAddress || 'Não conectado';
       if (!walletAddress) {
         tokenBalanceElement.textContent = '0.00 DET';
-        reviewHistoryElement.innerHTML = '<tr><td colspan="6">No reviews yet.</td></tr>';
+        reviewHistoryElement.innerHTML = '<tr><td colspan="6">Nenhuma avaliação ainda.</td></tr>';
         return;
       }
 
@@ -533,14 +632,14 @@ document.addEventListener('DOMContentLoaded', () => {
           reviewHistoryElement.appendChild(row);
         });
       } else {
-        reviewHistoryElement.innerHTML = '<tr><td colspan="6">No reviews yet.</td></tr>';
+        reviewHistoryElement.innerHTML = '<tr><td colspan="6">Nenhuma avaliação ainda.</td></tr>';
       }
     }
   }
 
-  // Update ranking list
+  // Atualizar lista de ranking
   function updateRankingList() {
-    console.log("Updating ranking...");
+    console.log("Atualizando ranking...");
     const rankingListElement = document.getElementById('rankingList');
     const totalReviewsElement = document.getElementById('totalReviews');
     const totalTokensElement = document.getElementById('totalTokens');
@@ -550,7 +649,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!rankingListElement) return;
 
-    const walletsData = JSON.parse(localStorage.getItem('walletsData') || '{}');
+    let walletsData = {};
+    try {
+      walletsData = JSON.parse(localStorage.getItem('walletsData') || '{}');
+    } catch (error) {
+      console.error('Erro ao acessar walletsData no localStorage:', error);
+    }
     let ranking = Object.keys(walletsData).map(wallet => {
       const userData = walletsData[wallet];
       const totalTokens = userData.reviews.reduce((sum, review) => sum + (review.tokens || 0), 0);
@@ -591,15 +695,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (userRankingElement) {
       if (!walletAddress) {
-        userRankingElement.textContent = 'Connect your wallet to see your ranking!';
+        userRankingElement.textContent = 'Conecte sua carteira para ver seu ranking!';
         userRankingElement.classList.remove('current-user');
       } else {
         const userRank = ranking.findIndex(user => user.wallet === walletAddress) + 1;
         if (userRank > 0) {
-          userRankingElement.textContent = `You are in ${userRank}º place with ${ranking[userRank - 1].reviews} reviews and ${ranking[userRank - 1].totalTokens.toFixed(2)} DET!`;
+          userRankingElement.textContent = `Você está em ${userRank}º lugar com ${ranking[userRank - 1].reviews} avaliações e ${ranking[userRank - 1].totalTokens.toFixed(2)} DET!`;
           userRankingElement.classList.add('current-user');
         } else {
-          userRankingElement.textContent = 'You are not yet in the ranking. Start reviewing!';
+          userRankingElement.textContent = 'Você ainda não está no ranking. Comece a avaliar!';
           userRankingElement.classList.remove('current-user');
         }
       }
@@ -607,7 +711,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     rankingListElement.innerHTML = '';
     if (ranking.length === 0) {
-      rankingListElement.innerHTML = '<tr><td colspan="4">No users in the ranking yet.</td></tr>';
+      rankingListElement.innerHTML = '<tr><td colspan="4">Nenhum usuário no ranking ainda.</td></tr>';
       return;
     }
 
@@ -630,11 +734,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Load product details
+  // Carregar detalhes do produto
   function loadProductDetails() {
-    console.log("Loading product details...");
+    console.log("Carregando detalhes do produto...");
     const productName = new URLSearchParams(window.location.search).get('name');
-    console.log("Product name from URL:", productName);
+    console.log("Nome do produto da URL:", productName);
 
     const elements = {
       productTitle: document.getElementById('productTitle'),
@@ -647,45 +751,58 @@ document.addEventListener('DOMContentLoaded', () => {
       reviewProductName: document.getElementById('reviewProductName')
     };
 
-    if (!productName || !elements.productName) {
-      console.warn("Product name or HTML elements not found.");
-      if (elements.productName) {
-        elements.productName.textContent = 'Product not specified';
-        elements.productDescription.textContent = 'Please access the page with a valid product (e.g., product.html?name=Smartphone+X).';
-        elements.productTitle.textContent = 'Error';
-        elements.productImage.src = 'https://via.placeholder.com/300';
-        elements.productCategory.textContent = 'N/A';
-        elements.reviewCount.textContent = '0';
-        elements.reviewList.innerHTML = '<tr><td colspan="5">No reviews available.</td></tr>';
-      }
+    if (!elements.productName || !elements.productTitle) {
+      console.warn("Elementos HTML necessários não encontrados.");
       return;
     }
 
-    const products = JSON.parse(localStorage.getItem('products') || '[]');
+    if (!productName) {
+      elements.productName.textContent = 'Produto não especificado';
+      elements.productDescription.textContent = 'Por favor, acesse a página com um produto válido (exemplo: product.html?name=Smartphone+X).';
+      elements.productTitle.textContent = 'Erro';
+      if (elements.productImage) elements.productImage.src = 'https://via.placeholder.com/300';
+      if (elements.productCategory) elements.productCategory.textContent = 'N/A';
+      if (elements.reviewCount) elements.reviewCount.textContent = '0';
+      if (elements.reviewList) elements.reviewList.innerHTML = '<tr><td colspan="5">Nenhuma avaliação disponível.</td></tr>';
+      return;
+    }
+
+    let products = [];
+    try {
+      products = JSON.parse(localStorage.getItem('products') || '[]');
+    } catch (error) {
+      console.error('Erro ao acessar products no localStorage:', error);
+    }
+
     const product = products.find(p => p.name === decodeURIComponent(productName));
 
     if (!product) {
-      console.warn("Product not found in localStorage:", decodeURIComponent(productName));
-      elements.productName.textContent = 'Product not found';
-      elements.productDescription.textContent = 'The requested product is not available.';
-      elements.productTitle.textContent = 'Product not found';
-      elements.productImage.src = 'https://via.placeholder.com/300';
-      elements.productCategory.textContent = 'N/A';
-      elements.reviewCount.textContent = '0';
-      elements.reviewList.innerHTML = '<tr><td colspan="5">No reviews available.</td></tr>';
+      console.warn("Produto não encontrado em localStorage:", decodeURIComponent(productName));
+      elements.productName.textContent = 'Produto não encontrado';
+      elements.productDescription.textContent = 'O produto solicitado não está disponível.';
+      elements.productTitle.textContent = 'Produto não encontrado';
+      if (elements.productImage) elements.productImage.src = 'https://via.placeholder.com/300';
+      if (elements.productCategory) elements.productCategory.textContent = 'N/A';
+      if (elements.reviewCount) elements.reviewCount.textContent = '0';
+      if (elements.reviewList) elements.reviewList.innerHTML = '<tr><td colspan="5">Nenhuma avaliação disponível.</td></tr>';
       return;
     }
 
-    console.log("Product found:", product);
+    console.log("Produto encontrado:", product);
     elements.productTitle.textContent = product.name;
     elements.productName.textContent = product.name;
-    elements.productDescription.textContent = product.description || 'No description.';
-    elements.productImage.src = product.image || 'https://via.placeholder.com/300';
-    elements.productCategory.textContent = product.category || 'No category';
-    elements.reviewCount.textContent = countProductReviews(product.name);
-    elements.reviewProductName.textContent = product.name;
+    elements.productDescription.textContent = product.description || 'Sem descrição.';
+    if (elements.productImage) elements.productImage.src = product.image || 'https://via.placeholder.com/300';
+    if (elements.productCategory) elements.productCategory.textContent = product.category || 'Sem categoria';
+    if (elements.reviewCount) elements.reviewCount.textContent = countProductReviews(product.name);
+    if (elements.reviewProductName) elements.reviewProductName.textContent = product.name;
 
-    const walletsData = JSON.parse(localStorage.getItem('walletsData') || '{}');
+    let walletsData = {};
+    try {
+      walletsData = JSON.parse(localStorage.getItem('walletsData') || '{}');
+    } catch (error) {
+      console.error('Erro ao acessar walletsData no localStorage:', error);
+    }
     const reviews = [];
     Object.keys(walletsData).forEach(wallet => {
       const userData = walletsData[wallet];
@@ -698,125 +815,115 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    console.log("Reviews found:", reviews.length);
-    elements.reviewList.innerHTML = '';
-    if (reviews.length === 0) {
-      elements.reviewList.innerHTML = '<tr><td colspan="5">No reviews available.</td></tr>';
-    } else {
-      reviews.forEach(review => {
-        const maskedWallet = `${review.wallet.slice(0, 6)}...${review.wallet.slice(-4)}`;
-        const stars = '★'.repeat(review.stars) + '☆'.repeat(5 - review.stars);
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${maskedWallet}</td>
-          <td>${review.text}</td>
-          <td><span class="stars">${stars}</span></td>
-          <td><i class="fas fa-thumbs-${review.thumb === 'Positive' ? 'up thumb-up' : 'down thumb-down'}"></i></td>
-          <td>${review.timestamp}</td>
-        `;
-        elements.reviewList.appendChild(row);
-      });
+    console.log("Avaliações encontradas:", reviews.length);
+    if (elements.reviewList) {
+      elements.reviewList.innerHTML = '';
+      if (reviews.length === 0) {
+        elements.reviewList.innerHTML = '<tr><td colspan="5">Nenhuma avaliação disponível.</td></tr>';
+      } else {
+        reviews.forEach(review => {
+          const maskedWallet = `${review.wallet.slice(0, 6)}...${review.wallet.slice(-4)}`;
+          const stars = '★'.repeat(review.stars) + '☆'.repeat(5 - review.stars);
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${maskedWallet}</td>
+            <td>${review.text}</td>
+            <td><span class="stars">${stars}</span></td>
+            <td><i class="fas fa-thumbs-${review.thumb === 'Positive' ? 'up thumb-up' : 'down thumb-down'}"></i></td>
+            <td>${review.timestamp}</td>
+          `;
+          elements.reviewList.appendChild(row);
+        });
+      }
     }
 
     checkReviewedProducts();
   }
 
-  // Submit product form
-  function submitProduct() {
+  // Configurar formulário de envio de produto
+  function setupSubmitProductForm() {
     const submitProductForm = document.getElementById('submitProductForm');
-    if (submitProductForm) {
-      submitProductForm.addEventListener('submit', async e => {
-        e.preventDefault();
-        console.log("Submitting product form...");
-        if (!walletAddress) {
-          showMessage('Please connect your wallet first!', 'error');
-          return;
-        }
+    if (!submitProductForm) {
+      console.warn("Formulário submitProductForm não encontrado.");
+      return;
+    }
 
-        const name = document.getElementById('productName')?.value.trim();
-        const description = document.getElementById('productDescription')?.value.trim();
-        const image = document.getElementById('productImage')?.value.trim();
-        const category = document.getElementById('productCategory')?.value;
+    submitProductForm.addEventListener('submit', e => {
+      e.preventDefault();
+      console.log("Enviando formulário de produto...");
 
-        if (!name) {
-          showMessage('Please provide the product name.', 'error');
-          return;
-        }
-        if (!description || description.length < 10) {
-          showMessage('The description must be at least 10 characters long.', 'error');
-          return;
-        }
-        if (description.length > 500) {
-          showMessage('The description cannot exceed 500 characters.', 'error');
-          return;
-        }
-        if (!image) {
-          showMessage('Please provide an image URL.', 'error');
-          return;
-        }
-        if (!category) {
-          showMessage('Please select a category.', 'error');
-          return;
-        }
+      const nameInput = document.getElementById('productName');
+      const descriptionInput = document.getElementById('productDescription');
+      const imageInput = document.getElementById('productImage');
+      const categoryInput = document.getElementById('productCategory');
 
-        const isImageValid = await isValidImageUrl(image);
-        if (!isImageValid) {
-          showMessage('The provided URL is not a valid image.', 'error');
-          return;
-        }
+      if (!nameInput || !descriptionInput || !imageInput || !categoryInput) {
+        console.error("Campos do formulário não encontrados.");
+        showMessage('Erro: Campos do formulário ausentes.', 'error');
+        return;
+      }
 
-        const productData = {
-          name,
-          description,
-          image,
-          category,
-          wallet: walletAddress,
-          timestamp: new Date().toLocaleString('pt-BR')
-        };
+      const name = nameInput.value.trim();
+      const description = descriptionInput.value.trim();
+      const image = imageInput.value.trim();
+      const category = categoryInput.value;
 
+      if (!name) {
+        showMessage('Informe o nome do produto.', 'error');
+        return;
+      }
+      if (!description || description.length < 10) {
+        showMessage('A descrição deve ter pelo menos 10 caracteres.', 'error');
+        return;
+      }
+      if (!image) {
+        showMessage('Informe uma URL de imagem.', 'error');
+        return;
+      }
+      if (!category) {
+        showMessage('Selecione uma categoria.', 'error');
+        return;
+      }
+
+      const productData = {
+        name,
+        description,
+        image,
+        category,
+        wallet: walletAddress || 'test-wallet',
+        timestamp: new Date().toLocaleString('pt-BR')
+      };
+
+      try {
         const products = JSON.parse(localStorage.getItem('products') || '[]');
         products.push(productData);
         localStorage.setItem('products', JSON.stringify(products));
-
-        console.log("Product saved:", productData);
-        showMessage('Product submitted successfully!', 'success');
+        console.log("Produto salvo:", productData);
+        showMessage('Seu produto foi enviado!', 'success');
         submitProductForm.reset();
-        loadProducts();
-      });
-    }
+        if (window.location.pathname.includes('evaluate.html')) loadProducts();
+      } catch (error) {
+        console.error("Erro ao salvar produto:", error);
+        showMessage('Erro ao salvar o produto. Verifique se o armazenamento está permitido.', 'error');
+      }
+    });
   }
 
-  // Show message
+  // Exibir mensagem
   function showMessage(text, type) {
     const messageElement = document.getElementById('formMessage');
     if (messageElement) {
       messageElement.textContent = text;
       messageElement.className = `message ${type}`;
+      messageElement.style.display = 'block';
       setTimeout(() => {
         messageElement.textContent = '';
         messageElement.className = 'message';
+        messageElement.style.display = 'none';
       }, 3000);
     } else {
+      console.warn("Elemento formMessage não encontrado.");
       alert(text);
     }
   }
-
-  // Validate image URL
-  function isValidImageUrl(url) {
-    return new Promise(resolve => {
-      try {
-        new URL(url);
-        const img = new Image();
-        img.onload = () => resolve(true);
-        img.onerror = () => resolve(false);
-        img.src = url;
-        setTimeout(() => resolve(false), 3000);
-      } catch (_) {
-        resolve(false);
-      }
-    });
-  }
-
-  // Call submitProduct to initialize the form listener
-  submitProduct();
 });
