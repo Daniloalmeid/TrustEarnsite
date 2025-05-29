@@ -14,11 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadProducts();
     checkReviewedProducts();
     attachReviewFormListeners();
-  }
-  if (window.location.pathname.includes('product.html')) {
-    loadProductDetails();
-    checkReviewedProducts();
-    attachReviewFormListeners();
+    setupModalListeners();
   }
   if (window.location.pathname.includes('profile.html')) updateProfilePage();
   if (window.location.pathname.includes('rewards.html')) updateRankingList();
@@ -128,7 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
       updateStakedTokens();
       updateProfilePage();
       updateRankingList();
-      loadProductDetails();
     });
   }
 
@@ -150,14 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     });
-
-    const reviewButton = document.getElementById('reviewButton');
-    const productName = document.getElementById('productName')?.textContent;
-    if (reviewButton && productName) {
-      const hasReviewed = userData.reviews.some(review => review.product === productName);
-      reviewButton.classList.toggle('disabled', hasReviewed);
-      reviewButton.textContent = hasReviewed ? '✓ Já Avaliado' : 'Avaliar Produto';
-    }
   }
 
   // Alternar formulário de avaliação
@@ -285,7 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <span class="review-count"><i class="fas fa-star"></i> ${reviewCount} Avaliação${reviewCount !== 1 ? 'es' : ''}</span>
             <span class="read-more">Ler mais</span>
             <div class="button-group">
-              <a href="product.html?name=${encodeURIComponent(product.name)}" class="btn btn-info">Ver Detalhes</a>
+              <button class="btn btn-info btn-details" data-product-name="${encodeURIComponent(product.name)}">Ver Detalhes</button>
               <button class="btn btn-select">Avaliar Selecionado</button>
             </div>
           </div>
@@ -331,6 +318,227 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log("Produtos renderizados:", Object.keys(categories).length, "categorias com", userProducts.length, "produtos no total.");
     checkReviewedProducts();
     attachReviewFormListeners();
+  }
+
+  // Configurar ouvintes do modal
+  function setupModalListeners() {
+    const modal = document.getElementById('productModal');
+    const closeBtn = document.querySelector('.modal-close');
+    if (modal && closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+      });
+      window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.style.display = 'none';
+        }
+      });
+    }
+
+    const detailsButtons = document.querySelectorAll('.btn-details');
+    detailsButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const productName = decodeURIComponent(button.dataset.productName);
+        showProductModal(productName);
+      });
+    });
+  }
+
+  // Exibir modal com detalhes do produto
+  function showProductModal(productName) {
+    console.log("Exibindo modal para produto:", productName);
+    const modal = document.getElementById('productModal');
+    const modalContent = document.getElementById('modalProductDetails');
+    if (!modal || !modalContent) {
+      console.error("Elementos do modal não encontrados.");
+      return;
+    }
+
+    let products = [];
+    try {
+      products = JSON.parse(localStorage.getItem('products') || '[]');
+    } catch (error) {
+      console.error('Erro ao acessar products no localStorage:', error);
+      products = [...defaultProducts, ...inMemoryProducts];
+    }
+
+    const product = products.find(p => p.name === productName);
+    if (!product) {
+      console.warn("Produto não encontrado:", productName);
+      modalContent.innerHTML = '<p>Produto não encontrado.</p>';
+      modal.style.display = 'block';
+      return;
+    }
+
+    let walletsData = {};
+    try {
+      walletsData = JSON.parse(localStorage.getItem('walletsData') || '{}');
+    } catch (error) {
+      console.error('Erro ao acessar walletsData no localStorage:', error);
+    }
+    const reviews = [];
+    Object.keys(walletsData).forEach(wallet => {
+      const userData = walletsData[wallet];
+      if (userData.reviews) {
+        userData.reviews.forEach(review => {
+          if (review.product === product.name) {
+            reviews.push({ ...review, wallet });
+          }
+        });
+      }
+    });
+
+    const reviewCount = countProductReviews(product.name);
+    modalContent.innerHTML = `
+      <h2>${product.name}</h2>
+      <img src="${product.image}" alt="${product.name}" class="product-image">
+      <p><strong>Descrição:</strong> ${product.description || 'Sem descrição.'}</p>
+      <p><strong>Categoria:</strong> ${product.category || 'Sem categoria'}</p>
+      <p><strong>Avaliações:</strong> ${reviewCount}</p>
+      <div class="review-form" id="modalReviewForm">
+        <h4>Avaliar ${product.name}</h4>
+        <form id="modalProductReviewForm">
+          <div class="form-group">
+            <label for="modalReviewText">Sua Avaliação (em inglês)</label>
+            <textarea id="modalReviewText" rows="4" placeholder="Share your feedback in English..." required></textarea>
+          </div>
+          <div class="form-group">
+            <label>Classificação</label>
+            <div class="star-rating">
+              <span class="star" data-value="1">★</span>
+              <span class="star" data-value="2">★</span>
+              <span class="star" data-value="3">★</span>
+              <span class="star" data-value="4">★</span>
+              <span class="star" data-value="5">★</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Sentimento</label>
+            <div class="thumb-rating">
+              <i class="fas fa-thumbs-up thumb up"></i>
+              <i class="fas fa-thumbs-down thumb down"></i>
+            </div>
+          </div>
+          <button type="submit" class="btn-submit">Enviar Avaliação</button>
+        </form>
+      </div>
+      <h3>Avaliações</h3>
+      <div class="review-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Carteira</th>
+              <th>Avaliação</th>
+              <th>Classificação</th>
+              <th>Sentimento</th>
+              <th>Data</th>
+            </tr>
+          </thead>
+          <tbody id="modalReviewList">
+            ${reviews.length === 0 ? '<tr><td colspan="5">Nenhuma avaliação disponível.</td></tr>' : reviews.map(review => {
+              const maskedWallet = `${review.wallet.slice(0, 6)}...${review.wallet.slice(-4)}`;
+              const stars = '★'.repeat(review.stars) + '☆'.repeat(5 - review.stars);
+              return `
+                <tr>
+                  <td>${maskedWallet}</td>
+                  <td>${review.text}</td>
+                  <td><span class="stars">${stars}</span></td>
+                  <td><i class="fas fa-thumbs-${review.thumb === 'Positive' ? 'up thumb-up' : 'down thumb-down'}"></i></td>
+                  <td>${review.timestamp}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    modal.style.display = 'block';
+
+    // Configurar formulário de avaliação no modal
+    const modalReviewForm = document.getElementById('modalProductReviewForm');
+    if (modalReviewForm) {
+      const stars = modalReviewForm.querySelectorAll('.star');
+      stars.forEach(star => {
+        star.addEventListener('click', () => {
+          const value = star.getAttribute('data-value');
+          stars.forEach(s => s.classList.toggle('selected', s.getAttribute('data-value') <= value));
+        });
+      });
+
+      const thumbs = modalReviewForm.querySelectorAll('.thumb');
+      thumbs.forEach(thumb => {
+        thumb.addEventListener('click', () => {
+          thumbs.forEach(t => t.classList.remove('selected'));
+          thumb.classList.add('selected');
+        });
+      });
+
+      modalReviewForm.addEventListener('submit', e => {
+        e.preventDefault();
+        console.log("Formulário de avaliação enviado (modal)");
+        if (!walletAddress) {
+          alert('Por favor, conecte sua carteira primeiro!');
+          return;
+        }
+
+        const reviewText = modalReviewForm.querySelector('textarea').value.trim();
+        const selectedStars = modalReviewForm.querySelectorAll('.star.selected').length;
+        const selectedThumb = modalReviewForm.querySelector('.thumb.selected');
+        const thumbType = selectedThumb ? (selectedThumb.classList.contains('up') ? 'Positive' : 'Negative') : null;
+
+        if (!reviewText || reviewText.length < 10) {
+          alert('A avaliação deve ter pelo menos 10 caracteres.');
+          return;
+        }
+        if (selectedStars === 0) {
+          alert('Por favor, selecione uma classificação por estrelas.');
+          return;
+        }
+        if (!thumbType) {
+          alert('Por favor, selecione um sentimento (polegar para cima ou para baixo).');
+          return;
+        }
+
+        const userData = getUserData(walletAddress);
+        if (userData.reviews.some(review => review.product === productName)) {
+          alert('Você já avaliou este produto!');
+          return;
+        }
+
+        const tokensEarned = 10;
+        const stakeAmount = tokensEarned * 0.1;
+        const availableTokens = tokensEarned - stakeAmount;
+
+        userData.reviews.push({
+          product: productName,
+          text: reviewText,
+          stars: selectedStars,
+          thumb: thumbType,
+          tokens: tokensEarned,
+          timestamp: new Date().toLocaleString('pt-BR')
+        });
+
+        userData.balance += availableTokens;
+        userData.stakes.push({
+          amount: stakeAmount,
+          date: new Date().toISOString()
+        });
+
+        saveUserData(walletAddress, userData);
+
+        alert(`Avaliação enviada para ${productName}!\nClassificação: ${selectedStars} estrelas\nSentimento: ${thumbType}\nTokens Ganhos: ${tokensEarned.toFixed(2)} DET`);
+
+        modalReviewForm.reset();
+        stars.forEach(s => s.classList.remove('selected'));
+        thumbs.forEach(t => t.classList.remove('selected'));
+        modal.style.display = 'none';
+        loadProducts();
+        updateStakedTokens();
+        updateProfilePage();
+        updateRankingList();
+      });
+    }
   }
 
   // Anexar ouvintes ao formulário de avaliação
@@ -425,114 +633,8 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStakedTokens();
         updateProfilePage();
         updateRankingList();
-        loadProductDetails();
       });
     });
-
-    // Formulário de avaliação do produto (product.html)
-    const productReviewForm = document.getElementById('productReviewForm');
-    if (productReviewForm) {
-      console.log("Configurando formulário de avaliação em product.html");
-      const stars = productReviewForm.querySelectorAll('.star');
-      stars.forEach(star => {
-        star.addEventListener('click', () => {
-          const value = star.getAttribute('data-value');
-          stars.forEach(s => s.classList.toggle('selected', s.getAttribute('data-value') <= value));
-        });
-      });
-
-      const thumbs = productReviewForm.querySelectorAll('.thumb');
-      thumbs.forEach(thumb => {
-        thumb.addEventListener('click', () => {
-          thumbs.forEach(t => t.classList.remove('selected'));
-          thumb.classList.add('selected');
-        });
-      });
-
-      productReviewForm.addEventListener('submit', e => {
-        e.preventDefault();
-        console.log("Formulário de avaliação enviado (product.html)");
-        if (!walletAddress) {
-          alert('Por favor, conecte sua carteira primeiro!');
-          return;
-        }
-
-        const productName = document.getElementById('productName')?.textContent;
-        const reviewText = productReviewForm.querySelector('textarea').value.trim();
-        const selectedStars = productReviewForm.querySelectorAll('.star.selected').length;
-        const selectedThumb = productReviewForm.querySelector('.thumb.selected');
-        const thumbType = selectedThumb ? (selectedThumb.classList.contains('up') ? 'Positive' : 'Negative') : null;
-
-        if (!productName) {
-          alert('Erro: Nome do produto não encontrado.');
-          return;
-        }
-        if (!reviewText || reviewText.length < 10) {
-          alert('A avaliação deve ter pelo menos 10 caracteres.');
-          return;
-        }
-        if (selectedStars === 0) {
-          alert('Por favor, selecione uma classificação por estrelas.');
-          return;
-        }
-        if (!thumbType) {
-          alert('Por favor, selecione um sentimento (polegar para cima ou para baixo).');
-          return;
-        }
-
-        const userData = getUserData(walletAddress);
-        if (userData.reviews.some(review => review.product === productName)) {
-          alert('Você já avaliou este produto!');
-          return;
-        }
-
-        const tokensEarned = 10;
-        const stakeAmount = tokensEarned * 0.1;
-        const availableTokens = tokensEarned - stakeAmount;
-
-        userData.reviews.push({
-          product: productName,
-          text: reviewText,
-          stars: selectedStars,
-          thumb: thumbType,
-          tokens: tokensEarned,
-          timestamp: new Date().toLocaleString('pt-BR')
-        });
-
-        userData.balance += availableTokens;
-        userData.stakes.push({
-          amount: stakeAmount,
-          date: new Date().toISOString()
-        });
-
-        saveUserData(walletAddress, userData);
-
-        alert(`Avaliação enviada para ${productName}!\nClassificação: ${selectedStars} estrelas\nSentimento: ${thumbType}\nTokens Ganhos: ${tokensEarned.toFixed(2)} DET`);
-
-        productReviewForm.reset();
-        stars.forEach(s => s.classList.remove('selected'));
-        thumbs.forEach(t => t.classList.remove('selected'));
-        const reviewButton = document.getElementById('reviewButton');
-        reviewButton.classList.add('disabled');
-        reviewButton.textContent = '✓ Já Avaliado';
-        document.getElementById('reviewForm').style.display = 'none';
-        loadProductDetails();
-        updateStakedTokens();
-        updateProfilePage();
-        updateRankingList();
-      });
-    }
-
-    // Botão de avaliação
-    const reviewButton = document.getElementById('reviewButton');
-    if (reviewButton) {
-      reviewButton.addEventListener('click', () => {
-        console.log("Botão Avaliar Produto clicado");
-        if (reviewButton.classList.contains('disabled')) return;
-        const reviewForm = document.getElementById('reviewForm');
-        reviewForm.style.display = reviewForm.style.display === 'none' ? 'block' : 'none';
-      });
-    }
   }
 
   // Atualizar tokens em stake
@@ -743,113 +845,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Carregar detalhes do produto
-  function loadProductDetails() {
-    console.log("Carregando detalhes do produto...");
-    const productName = new URLSearchParams(window.location.search).get('name');
-    console.log("Nome do produto da URL:", productName);
-
-    const elements = {
-      productTitle: document.getElementById('productTitle'),
-      productName: document.getElementById('productName'),
-      productDescription: document.getElementById('productDescription'),
-      productImage: document.getElementById('productImage'),
-      productCategory: document.getElementById('productCategory'),
-      reviewCount: document.getElementById('reviewCount'),
-      reviewList: document.getElementById('reviewList'),
-      reviewProductName: document.getElementById('reviewProductName')
-    };
-
-    if (!elements.productName || !elements.productTitle) {
-      console.warn("Elementos HTML necessários não encontrados.");
-      return;
-    }
-
-    if (!productName) {
-      elements.productName.textContent = 'Produto não especificado';
-      elements.productDescription.textContent = 'Por favor, acesse a página com um produto válido (exemplo: product.html?name=Smartphone+X).';
-      elements.productTitle.textContent = 'Erro';
-      if (elements.productImage) elements.productImage.src = 'https://picsum.photos/300/300?random=1';
-      if (elements.productCategory) elements.productCategory.textContent = 'N/A';
-      if (elements.reviewCount) elements.reviewCount.textContent = '0';
-      if (elements.reviewList) elements.reviewList.innerHTML = '<tr><td colspan="5">Nenhuma avaliação disponível.</td></tr>';
-      return;
-    }
-
-    let products = [];
-    try {
-      products = JSON.parse(localStorage.getItem('products') || '[]');
-    } catch (error) {
-      console.error('Erro ao acessar products no localStorage:', error);
-      products = [...defaultProducts, ...inMemoryProducts];
-    }
-
-    const product = products.find(p => p.name === decodeURIComponent(productName));
-
-    if (!product) {
-      console.warn("Produto não encontrado:", decodeURIComponent(productName));
-      elements.productName.textContent = 'Produto não encontrado';
-      elements.productDescription.textContent = 'O produto solicitado não está disponível.';
-      elements.productTitle.textContent = 'Produto não encontrado';
-      if (elements.productImage) elements.productImage.src = 'https://picsum.photos/300/300?random=1';
-      if (elements.productCategory) elements.productCategory.textContent = 'N/A';
-      if (elements.reviewCount) elements.reviewCount.textContent = '0';
-      if (elements.reviewList) elements.reviewList.innerHTML = '<tr><td colspan="5">Nenhuma avaliação disponível.</td></tr>';
-      return;
-    }
-
-    console.log("Produto encontrado:", product);
-    elements.productTitle.textContent = product.name;
-    elements.productName.textContent = product.name;
-    elements.productDescription.textContent = product.description || 'Sem descrição.';
-    if (elements.productImage) elements.productImage.src = product.image || 'https://picsum.photos/300/300?random=1';
-    if (elements.productCategory) elements.productCategory.textContent = product.category || 'Sem categoria';
-    if (elements.reviewCount) elements.reviewCount.textContent = countProductReviews(product.name);
-    if (elements.reviewProductName) elements.reviewProductName.textContent = product.name;
-
-    let walletsData = {};
-    try {
-      walletsData = JSON.parse(localStorage.getItem('walletsData') || '{}');
-    } catch (error) {
-      console.error('Erro ao acessar walletsData no localStorage:', error);
-    }
-    const reviews = [];
-    Object.keys(walletsData).forEach(wallet => {
-      const userData = walletsData[wallet];
-      if (userData.reviews) {
-        userData.reviews.forEach(review => {
-          if (review.product === product.name) {
-            reviews.push({ ...review, wallet });
-          }
-        });
-      }
-    });
-
-    console.log("Avaliações encontradas:", reviews.length);
-    if (elements.reviewList) {
-      elements.reviewList.innerHTML = '';
-      if (reviews.length === 0) {
-        elements.reviewList.innerHTML = '<tr><td colspan="5">Nenhuma avaliação disponível.</td></tr>';
-      } else {
-        reviews.forEach(review => {
-          const maskedWallet = `${review.wallet.slice(0, 6)}...${review.wallet.slice(-4)}`;
-          const stars = '★'.repeat(review.stars) + '☆'.repeat(5 - review.stars);
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${maskedWallet}</td>
-            <td>${review.text}</td>
-            <td><span class="stars">${stars}</span></td>
-            <td><i class="fas fa-thumbs-${review.thumb === 'Positive' ? 'up thumb-up' : 'down thumb-down'}"></i></td>
-            <td>${review.timestamp}</td>
-          `;
-          elements.reviewList.appendChild(row);
-        });
-      }
-    }
-
-    checkReviewedProducts();
-  }
-
   // Configurar formulário de envio de produto
   function setupSubmitProductForm() {
     const submitProductForm = document.getElementById('submitProductForm');
@@ -924,7 +919,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showMessage('Seu produto foi enviado com sucesso!', 'success');
       submitProductForm.reset();
 
-      // Redirecionar para evaluate.html para visualizar o novo produto
+      // Redirecionar para evaluate.html
       setTimeout(() => {
         window.location.href = 'evaluate.html';
       }, 1000);

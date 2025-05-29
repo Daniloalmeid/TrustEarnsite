@@ -228,6 +228,60 @@ body {
     margin-top: 0.5rem;
 }
 
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: #FFFFFF;
+    margin: 5% auto;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 800px;
+    position: relative;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.modal-close {
+    color: #1E2A38;
+    float: right;
+    font-size: 1.8rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.modal-close:hover {
+    color: #DC3545;
+}
+
+.modal-content h2 {
+    color: #1E2A38;
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+.modal-content p {
+    font-size: 1.1rem;
+    color: #333333;
+    margin-bottom: 0.75rem;
+}
+
+.modal-content p strong {
+    color: #1E2A38;
+}
+
 /* Hero Section */
 .hero {
     text-align: center;
@@ -475,29 +529,7 @@ body {
     color: #DC3545;
 }
 
-/* Profile Section */
-.profile-section {
-    background-color: #FFFFFF;
-    padding: 2rem;
-    border-radius: 16px;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-    max-width: 1200px;
-    margin: 2rem auto;
-    border: 1px solid #E6E9F0;
-    animation: fadeIn 0.6s ease-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
 /* Product Details */
-.product-details {
-    margin-bottom: 1.5rem;
-    align-items: center;
-}
-
 .product-image {
     width: 100%;
     max-width: 400px;
@@ -506,21 +538,9 @@ body {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     object-fit: cover;
     margin-bottom: 1rem;
-}
-
-.product-info {
-    padding: 1.5rem;
-}
-
-.product-info p {
-    font-size: 1.1rem;
-    color: #333333;
-    margin-bottom: 1rem;
-}
-
-.product-info p strong {
-    color: #1E2A38;
-    font-weight: 600;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* Review Table */
@@ -872,15 +892,9 @@ h3 {
         font-size: 0.9rem;
         padding: 0.5rem 0.75rem;
     }
-    .product-details {
-        flex-direction: column;
-    }
     .product-image {
         max-width: 100%;
         margin: 0 auto 1rem;
-    }
-    .product-info {
-        padding: 1rem 0;
     }
     .review-form h4 {
         font-size: 0.9rem;
@@ -916,10 +930,6 @@ h3 {
     }
     .review-form {
         padding: 0.5rem;
-    }
-    .profile-section {
-        padding: 1.5rem;
-        margin: 1.5rem auto;
     }
     .submit-product-section {
         padding: 2rem;
