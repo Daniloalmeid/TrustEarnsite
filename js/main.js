@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   console.log("=== main.js Carregado ===");
   let walletAddress = null;
+  let inMemoryProducts = []; // Fallback para produtos em memória
   try {
     walletAddress = localStorage.getItem('walletAddress') || null;
   } catch (error) {
@@ -22,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.location.pathname.includes('profile.html')) updateProfilePage();
   if (window.location.pathname.includes('rewards.html')) updateRankingList();
   updateStakedTokens();
-  setupSubmitProductForm();
+  if (window.location.pathname.includes('submit-product.html')) setupSubmitProductForm();
 
   // Atualizar UI da carteira
   function updateWalletUI() {
@@ -50,9 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Salvar dados do usuário
   function saveUserData(walletAddress, data) {
-    let walletsData = {};
     try {
-      walletsData = JSON.parse(localStorage.getItem('walletsData') || '{}');
+      let walletsData = JSON.parse(localStorage.getItem('walletsData') || '{}');
       walletsData[walletAddress] = data;
       localStorage.setItem('walletsData', JSON.stringify(walletsData));
     } catch (error) {
@@ -172,6 +172,50 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Produtos de teste estáticos (fallback)
+  const defaultProducts = [
+    {
+      name: "Smartphone X",
+      description: "Um smartphone moderno com câmera de 48MP.",
+      image: "https://picsum.photos/300/300?random=1",
+      category: "Eletrônicos",
+      wallet: "test-wallet",
+      timestamp: new Date().toLocaleString('pt-BR')
+    },
+    {
+      name: "Tênis de Corrida",
+      description: "Tênis leve e confortável para corridas diárias.",
+      image: "https://picsum.photos/300/300?random=2",
+      category: "Esportes",
+      wallet: "test-wallet",
+      timestamp: new Date().toLocaleString('pt-BR')
+    },
+    {
+      name: "Livro: Aventuras Cósmicas",
+      description: "Uma ficção científica envolvente sobre exploração espacial.",
+      image: "https://picsum.photos/300/300?random=3",
+      category: "Livros",
+      wallet: "test-wallet",
+      timestamp: new Date().toLocaleString('pt-BR')
+    },
+    {
+      name: "Kit de Jardinagem",
+      description: "Ferramentas essenciais para cuidar do seu jardim.",
+      image: "https://picsum.photos/300/300?random=4",
+      category: "Jardinagem",
+      wallet: "test-wallet",
+      timestamp: new Date().toLocaleString('pt-BR')
+    },
+    {
+      name: "Boneco de Ação",
+      description: "Boneco articulado inspirado em super-heróis.",
+      image: "https://picsum.photos/300/300?random=5",
+      category: "Brinquedos",
+      wallet: "test-wallet",
+      timestamp: new Date().toLocaleString('pt-BR')
+    }
+  ];
+
   // Carregar produtos
   function loadProducts() {
     console.log("=== Carregando Produtos ===");
@@ -183,63 +227,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     productList.innerHTML = '';
     let userProducts = [];
+    let localStorageAvailable = true;
+
     try {
       const storedProducts = localStorage.getItem('products');
       userProducts = storedProducts ? JSON.parse(storedProducts) : [];
       console.log("Produtos carregados do localStorage:", userProducts.length);
     } catch (error) {
       console.error('Erro ao acessar ou parsear products no localStorage:', error);
+      localStorageAvailable = false;
     }
 
     if (!Array.isArray(userProducts) || userProducts.length === 0) {
-      console.warn("Nenhum produto encontrado. Inicializando com produtos de teste.");
-      userProducts = [
-        {
-          name: "Smartphone X",
-          description: "Um smartphone moderno com câmera de 48MP.",
-          image: "https://via.placeholder.com/300",
-          category: "Eletrônicos",
-          wallet: "test-wallet",
-          timestamp: new Date().toLocaleString('pt-BR')
-        },
-        {
-          name: "Tênis de Corrida",
-          description: "Tênis leve e confortável para corridas diárias.",
-          image: "https://via.placeholder.com/300",
-          category: "Esportes",
-          wallet: "test-wallet",
-          timestamp: new Date().toLocaleString('pt-BR')
-        },
-        {
-          name: "Livro: Aventuras Cósmicas",
-          description: "Uma ficção científica envolvente sobre exploração espacial.",
-          image: "https://via.placeholder.com/300",
-          category: "Livros",
-          wallet: "test-wallet",
-          timestamp: new Date().toLocaleString('pt-BR')
-        },
-        {
-          name: "Kit de Jardinagem",
-          description: "Ferramentas essenciais para cuidar do seu jardim.",
-          image: "https://via.placeholder.com/300",
-          category: "Jardinagem",
-          wallet: "test-wallet",
-          timestamp: new Date().toLocaleString('pt-BR')
-        },
-        {
-          name: "Boneco de Ação",
-          description: "Boneco articulado inspirado em super-heróis.",
-          image: "https://via.placeholder.com/300",
-          category: "Brinquedos",
-          wallet: "test-wallet",
-          timestamp: new Date().toLocaleString('pt-BR')
+      console.warn("Nenhum produto encontrado. Usando produtos de teste e inMemoryProducts.");
+      userProducts = [...defaultProducts, ...inMemoryProducts];
+      if (localStorageAvailable) {
+        try {
+          localStorage.setItem('products', JSON.stringify(userProducts));
+          console.log("Produtos de teste salvos no localStorage:", userProducts);
+        } catch (error) {
+          console.error('Erro ao salvar produtos de teste no localStorage:', error);
+          localStorageAvailable = false;
         }
-      ];
-      try {
-        localStorage.setItem('products', JSON.stringify(userProducts));
-        console.log("Produtos de teste salvos no localStorage:", userProducts);
-      } catch (error) {
-        console.error('Erro ao salvar produtos de teste no localStorage:', error);
       }
     }
 
@@ -760,7 +769,7 @@ document.addEventListener('DOMContentLoaded', () => {
       elements.productName.textContent = 'Produto não especificado';
       elements.productDescription.textContent = 'Por favor, acesse a página com um produto válido (exemplo: product.html?name=Smartphone+X).';
       elements.productTitle.textContent = 'Erro';
-      if (elements.productImage) elements.productImage.src = 'https://via.placeholder.com/300';
+      if (elements.productImage) elements.productImage.src = 'https://picsum.photos/300/300?random=1';
       if (elements.productCategory) elements.productCategory.textContent = 'N/A';
       if (elements.reviewCount) elements.reviewCount.textContent = '0';
       if (elements.reviewList) elements.reviewList.innerHTML = '<tr><td colspan="5">Nenhuma avaliação disponível.</td></tr>';
@@ -772,16 +781,17 @@ document.addEventListener('DOMContentLoaded', () => {
       products = JSON.parse(localStorage.getItem('products') || '[]');
     } catch (error) {
       console.error('Erro ao acessar products no localStorage:', error);
+      products = [...defaultProducts, ...inMemoryProducts];
     }
 
     const product = products.find(p => p.name === decodeURIComponent(productName));
 
     if (!product) {
-      console.warn("Produto não encontrado em localStorage:", decodeURIComponent(productName));
+      console.warn("Produto não encontrado:", decodeURIComponent(productName));
       elements.productName.textContent = 'Produto não encontrado';
       elements.productDescription.textContent = 'O produto solicitado não está disponível.';
       elements.productTitle.textContent = 'Produto não encontrado';
-      if (elements.productImage) elements.productImage.src = 'https://via.placeholder.com/300';
+      if (elements.productImage) elements.productImage.src = 'https://picsum.photos/300/300?random=1';
       if (elements.productCategory) elements.productCategory.textContent = 'N/A';
       if (elements.reviewCount) elements.reviewCount.textContent = '0';
       if (elements.reviewList) elements.reviewList.innerHTML = '<tr><td colspan="5">Nenhuma avaliação disponível.</td></tr>';
@@ -792,7 +802,7 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.productTitle.textContent = product.name;
     elements.productName.textContent = product.name;
     elements.productDescription.textContent = product.description || 'Sem descrição.';
-    if (elements.productImage) elements.productImage.src = product.image || 'https://via.placeholder.com/300';
+    if (elements.productImage) elements.productImage.src = product.image || 'https://picsum.photos/300/300?random=1';
     if (elements.productCategory) elements.productCategory.textContent = product.category || 'Sem categoria';
     if (elements.reviewCount) elements.reviewCount.textContent = countProductReviews(product.name);
     if (elements.reviewProductName) elements.reviewProductName.textContent = product.name;
@@ -868,6 +878,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const image = imageInput.value.trim();
       const category = categoryInput.value;
 
+      console.log("Dados do formulário:", { name, description, image, category });
+
       if (!name) {
         showMessage('Informe o nome do produto.', 'error');
         return;
@@ -894,18 +906,28 @@ document.addEventListener('DOMContentLoaded', () => {
         timestamp: new Date().toLocaleString('pt-BR')
       };
 
+      let localStorageAvailable = true;
       try {
-        const products = JSON.parse(localStorage.getItem('products') || '[]');
+        let products = JSON.parse(localStorage.getItem('products') || '[]');
+        if (!Array.isArray(products)) products = [];
         products.push(productData);
         localStorage.setItem('products', JSON.stringify(products));
-        console.log("Produto salvo:", productData);
-        showMessage('Seu produto foi enviado!', 'success');
-        submitProductForm.reset();
-        if (window.location.pathname.includes('evaluate.html')) loadProducts();
+        console.log("Produto salvo no localStorage:", productData);
       } catch (error) {
-        console.error("Erro ao salvar produto:", error);
-        showMessage('Erro ao salvar o produto. Verifique se o armazenamento está permitido.', 'error');
+        console.error("Erro ao salvar produto no localStorage:", error);
+        localStorageAvailable = false;
+        inMemoryProducts.push(productData);
+        console.log("Produto salvo em inMemoryProducts:", productData);
+        showMessage('Produto salvo temporariamente (armazenamento local bloqueado).', 'success');
       }
+
+      showMessage('Seu produto foi enviado com sucesso!', 'success');
+      submitProductForm.reset();
+
+      // Redirecionar para evaluate.html para visualizar o novo produto
+      setTimeout(() => {
+        window.location.href = 'evaluate.html';
+      }, 1000);
     });
   }
 
